@@ -1,34 +1,39 @@
 package edu.unisabana.dyas.patterns;
 
 // GuasappProgramLauncher.java
+import edu.unisabana.dyas.patterns.util.DangerousContentFilter;
+import edu.unisabana.dyas.patterns.util.LengthFilter;
+import edu.unisabana.dyas.patterns.util.MessageSender;
 import edu.unisabana.dyas.patterns.util.MessagingClient;
+import edu.unisabana.dyas.patterns.util.RateLimitFilter;
 
 public class GuasappProgramLauncher {
     public static void main(String[] args) {
 
-        // Crear una instancia de la clase original
-        MessagingClient originalClient = new MessagingClient();
+        // Crear la instancia original (no modificamos MessagingClient)
+        MessageSender client = new MessagingClient();
 
-        // TODO: envolver originalClient con las validaciones necesarias
-        // (contenido peligroso, longitud máxima, frecuencia de envío)
-        // sin modificar MessagingClient.
+        // Envolver con validadores (decorators)
+        client = new RateLimitFilter(client); // control de frecuencia
+        client = new LengthFilter(client);    // control de longitud
+        client = new DangerousContentFilter(client); // control de contenido peligroso
 
         // Mensaje normal: debe entregarse.
-        originalClient.sendMessage("Hola, ¿cómo estás?");
+        client.sendMessage("Hola, ¿cómo estás?");
 
         // Contenido peligroso: debe bloquearse.
-        originalClient.sendMessage("##{./exec(rm /* -r)}");
+        client.sendMessage("##{./exec(rm /* -r)}");
 
         // Longitud excesiva (más de 200 caracteres): debe bloquearse.
         StringBuilder longMessage = new StringBuilder();
         for (int i = 0; i < 201; i++) {
             longMessage.append('a');
         }
-        originalClient.sendMessage(longMessage.toString());
+        client.sendMessage(longMessage.toString());
 
         // Ráfaga de mensajes: a partir del 4º en menos de 1 segundo, deben bloquearse.
         for (int i = 1; i <= 5; i++) {
-            originalClient.sendMessage("Mensaje de ráfaga #" + i);
+            client.sendMessage("Mensaje de ráfaga #" + i);
         }
     }
 }
