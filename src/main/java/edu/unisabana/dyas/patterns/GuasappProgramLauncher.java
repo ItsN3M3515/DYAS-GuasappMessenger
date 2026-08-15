@@ -1,11 +1,12 @@
 package edu.unisabana.dyas.patterns;
 
 // GuasappProgramLauncher.java
-import edu.unisabana.dyas.patterns.util.DangerousContentFilter;
-import edu.unisabana.dyas.patterns.util.LengthFilter;
+import edu.unisabana.dyas.patterns.util.DangerousContentValidator;
+import edu.unisabana.dyas.patterns.util.LengthValidator;
+import edu.unisabana.dyas.patterns.util.MessageProxy;
 import edu.unisabana.dyas.patterns.util.MessageSender;
 import edu.unisabana.dyas.patterns.util.MessagingClient;
-import edu.unisabana.dyas.patterns.util.RateLimitFilter;
+import edu.unisabana.dyas.patterns.util.RateLimitValidator;
 
 public class GuasappProgramLauncher {
     public static void main(String[] args) {
@@ -13,10 +14,12 @@ public class GuasappProgramLauncher {
         // Crear la instancia original (no modificamos MessagingClient)
         MessageSender client = new MessagingClient();
 
-        // Envolver con validadores (decorators)
-        client = new RateLimitFilter(client); // control de frecuencia
-        client = new LengthFilter(client);    // control de longitud
-        client = new DangerousContentFilter(client); // control de contenido peligroso
+        // Usar un proxy que aplica validadores antes de delegar
+        client = new MessageProxy(client,
+            new DangerousContentValidator(),
+            new LengthValidator(200),
+            new RateLimitValidator(3, 1000L)
+        );
 
         // Mensaje normal: debe entregarse.
         client.sendMessage("Hola, ¿cómo estás?");
